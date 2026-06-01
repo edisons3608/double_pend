@@ -90,7 +90,7 @@ def dyn(s, f_val):
           xc_ddot_f(*s, f_val), th1_ddot_f(*s, f_val), th2_ddot_f(*s, f_val)])
 
 # Initial conditions: start with larger perturbation
-state0 = np.array([0.0, 0.5, 0.4, 0.0, 0.0, 0.0])
+state0 = np.array([0.0, 0.7, 0.9, 0.0, 0.0, 0.0])
 
 T = 5.0
 dt = 0.005
