@@ -74,7 +74,7 @@ import matplotlib.animation as animation
 import matplotlib.patches as patches
 from lqr import LQR
 
-# Keep F as a lambdify argument so PID can supply it
+# Keep F as a lambdify argument so controller can supply it
 xc_ddot_expr  = sol2[0][q_ddot[0]]
 th1_ddot_expr = sol2[0][q_ddot[1]]
 th2_ddot_expr = sol2[0][q_ddot[2]]
@@ -89,45 +89,64 @@ def dyn(s, f_val):
   return np.array([s[3], s[4], s[5],
           xc_ddot_f(*s, f_val), th1_ddot_f(*s, f_val), th2_ddot_f(*s, f_val)])
 
-# Wrap angle to [-pi, pi]
-def wrap_angle(a):
-  return (a + np.pi) % (2*np.pi) - np.pi
-
-# PID controllers for cart position, theta1, theta2
-pid_x  = PID(Kp=3,   Ki=0.1, Kd=4)
-pid_t1 = PID(Kp=150, Ki=0.5, Kd=30)
-pid_t2 = PID(Kp=150, Ki=0.5, Kd=30)
-
-F_MAX = 100.0
-
-# Targets: cart at origin, both links inverted (theta=0)
-x_target  = 0.0
-t1_target = 0.0
-t2_target = 0.0
-
 # Initial conditions: start near inverted with small perturbation
-state0 = np.array([0.0, 0.1, 0.05, 0.0, 0.0, 0.0])
+state0 = np.array([0.0, 0.15, 0.1, 0.0, 0.0, 0.0])
 
 T = 10.0
 dt = 0.005
 t_eval = np.arange(0, T, dt)
 
+x0 = np.array([0,0,0,0,0,0])
+u0 = np.array([0])
 
-controller = LQR(A, B, Q, R)
+def linearize(dyn,x0,u0,epsilon):
 
+  x0 = np.asarray(x0, dtype=float)
+  u0 = np.asarray(u0, dtype=float)
 
-print("running runge-kutta 4 with PID control")
+  n = len(x0)
+  m = len(u0)
+
+  A = np.zeros((n, n))
+  B = np.zeros((n, m))
+
+  for i in range(n):
+    dx = np.zeros(n)
+    dx[i] = epsilon
+
+    f_plus = dyn(x0 + dx, u0[0])
+    f_minus = dyn(x0 - dx, u0[0])
+
+    A[:, i] = (f_plus - f_minus) / (2 * epsilon)
+
+  for i in range(m):
+    du = np.zeros(m)
+    du[i] = epsilon
+
+    f_plus = dyn(x0, (u0 + du)[0])
+    f_minus = dyn(x0, (u0 - du)[0])
+
+    B[:, i] = (f_plus - f_minus) / (2 * epsilon)
+  
+  return A, B
+  
+
+A, B = linearize(dyn, x0, u0, 1e-6)
+
+# LQR cost weights
+Q_lqr = np.diag([1, 100, 100, 1, 10, 10])
+R_lqr = np.array([[0.01]])
+
+controller = LQR(A, B, Q_lqr, R_lqr)
+
+print("running runge-kutta 4 with LQR control")
 states = [state0.copy()]
 forces = []
 s = state0.copy()
 
 for i in range(len(t_eval) - 1):
-    # Compute PID force with angle wrapping
-    # Angle PIDs are negated: push cart toward the tilt to catch the pendulum
-    f_val = (pid_x.update(x_target, s[0], dt)
-           - pid_t1.update(t1_target, wrap_angle(s[1]), dt)
-           - pid_t2.update(t2_target, wrap_angle(s[2]), dt))
-    f_val = np.clip(f_val, -F_MAX, F_MAX)
+    # LQR state feedback: F = -K @ x
+    f_val = float(controller.compute(s).item())
     forces.append(f_val)
     # RK4 step
     k1 = dyn(s, f_val)
@@ -135,7 +154,13 @@ for i in range(len(t_eval) - 1):
     k3 = dyn(s + 0.5*dt*k2, f_val)
     k4 = dyn(s + dt*k3, f_val)
     s = s + (dt/6.0)*(k1 + 2*k2 + 2*k3 + k4)
+    if np.any(np.isnan(s)) or np.any(np.abs(s) > 1e6):
+        print(f"Simulation diverged at t={t_eval[i+1]:.3f}s, stopping.")
+        break
     states.append(s.copy())
+
+# Trim t_eval to match states
+t_eval = t_eval[:len(states)]
 
 states = np.array(states)
 forces = np.array(forces)
@@ -172,7 +197,7 @@ axes[3].set_ylabel('Force (N)')
 axes[3].set_xlabel('Time (s)')
 axes[3].legend(); axes[3].grid(True, alpha=0.3)
 
-fig_diag.suptitle('PID Control Diagnostics')
+fig_diag.suptitle('LQR Control Diagnostics')
 fig_diag.tight_layout()
 
 # Animation
@@ -203,6 +228,8 @@ def init():
 
 def animate(i):
     cx = xc_vals[i]
+    if np.isnan(cx) or np.isinf(cx):
+        return cart_patch, line1, line2, trail
     cart_patch.set_x(cx - cart_w/2)
     cart_patch.set_y(-cart_h/2)
     line1.set_data([cx, x1_vals[i]], [0, y1_vals[i]])
