@@ -89,24 +89,24 @@ def dyn(s, f_val):
   return np.array([s[3], s[4], s[5],
           xc_ddot_f(*s, f_val), th1_ddot_f(*s, f_val), th2_ddot_f(*s, f_val)])
 
-# Initial conditions: start with larger perturbation (NMPC handles this)
+# Initial conditions: start with larger perturbation
 state0 = np.array([0.0, 0.5, 0.4, 0.0, 0.0, 0.0])
 
-T = 10.0
+T = 5.0
 dt = 0.005
 t_eval = np.arange(0, T, dt)
 
 # NMPC parameters
-N_horizon = 30           # prediction horizon steps
-dt_mpc = 0.02            # coarser timestep for MPC prediction
-Q_mpc = np.diag([1, 100, 100, 1, 10, 10])
-R_mpc = np.array([[0.01]])
-Q_f   = np.diag([1, 100, 100, 1, 10, 10]) * 5  # heavier terminal cost
+N_horizon = 20 # prediction horizon steps
+dt_mpc = 0.05
+Q_mpc = np.diag([10, 100, 100, 10, 10, 10])
+R_mpc = np.array([[0.001]])
+Q_f   = np.diag([10, 200, 200, 10, 20, 20]) * 10  # heavy terminal cost
 F_MAX = 200.0
 
 controller = nMPC(dyn, N_horizon, dt_mpc, Q_mpc, R_mpc, Q_f, F_MAX)
 
-# Solve NMPC every mpc_every simulation steps (for speed)
+# Solve NMPC every so many simulation steps
 mpc_every = max(1, int(dt_mpc / dt))
 
 print("running runge-kutta 4 with NMPC control")
