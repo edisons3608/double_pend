@@ -170,6 +170,7 @@ axes[3].legend(); axes[3].grid(True, alpha=0.3)
 
 fig_diag.suptitle('PID Control Diagnostics')
 fig_diag.tight_layout()
+fig_diag.savefig('assets/pid_diagnostics.png', dpi=150, bbox_inches='tight')
 
 # Animation
 fig, ax = plt.subplots(figsize=(10, 6))

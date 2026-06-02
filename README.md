@@ -8,6 +8,8 @@ Simulation and control of an inverted double pendulum on a cart using three diff
 
 A cart (mass `m_c`) moves along a horizontal rail. Two rigid links (masses `m_1`, `m_2`, lengths `L_1`, `L_2`) are connected in series from the cart. The only control input is a horizontal force `F` applied to the cart. The goal is to balance both links in the inverted (upright) position.
 
+The dynamics for the system were generated through symbolic calculation of the Euler-Langrange equations, to which the equations of motion were then derived and implemented in the simulation.
+
 - **State**: `[x_c, θ_1, θ_2, ẋ_c, θ̇_1, θ̇_2]`
 - **Control input**: `F` (force on cart)
 - **Convention**: `θ = 0` is the upright (inverted) equilibrium.
