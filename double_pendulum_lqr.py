@@ -204,7 +204,7 @@ fig_diag.savefig('assets/lqr_diagnostics.png', dpi=150, bbox_inches='tight')
 # Animation
 fig, ax = plt.subplots(figsize=(10, 6))
 ax.set_aspect('equal')
-ax.set_ylim(-3, 2)
+ax.set_ylim(-3, 3)
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 ax.set_title('Cart + Double Pendulum')
