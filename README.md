@@ -2,6 +2,8 @@
 
 ![Preview](assets/preview.png)
 
+![Animation](assets/animate.gif)
+
 Simulation and control of an inverted double pendulum on a cart using three different control strategies (PID, LQR, nonlinear MPC).
 
 ## System
@@ -37,6 +39,17 @@ Optimal control using the full nonlinear dynamics. At each control step, optimiz
 | `pid.py` | PID controller class |
 | `lqr.py` | LQR controller class |
 | `nmpc.py` | NMPC controller class |
+
+## Results
+
+### PID
+![PID Diagnostics](assets/pid_diagnostics.png)
+
+### LQR
+![LQR Diagnostics](assets/lqr_diagnostics.png)
+
+### NMPC
+![NMPC Diagnostics](assets/nmpc_diagnostics.png)
 
 ## Dependencies
 
